@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convite - Mi 50 Anos | Envelope 3D Premium</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Poppins', 'Segoe UI', sans-serif;
+            background: #0a0e27;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* CANVAS 3D */
+        #canvas3d {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: block;
+        }
+
+        /* PARTÍCULAS DOURADAS ANIMADAS */
+        .particles-container {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            background: radial-gradient(circle, #ffd700, #ffed4e);
+            border-radius: 50%;
+            opacity: 0.6;
+            filter: blur(1px);
+        }
+
+        /* CONTAINER PRINCIPAL */
+        .main-container {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* TELA INICIAL COM ENVELOPE 3D */
+        .envelope-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.8s ease;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .envelope-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .envelope-title {
+            position: absolute;
+            top: 40px;
+            text-align: center;
+            color: #d4af37;
+            animation: fadeInDown 0.8s ease;
+            z-index: 25;
+        }
+
+        .envelope-title h1 {
+            font-size: clamp(24px, 5vw, 42px);
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .envelope-title p {
+            font-size: clamp(14px, 2vw, 18px);
+            font-weight: 300;
+            letter-spacing: 3px;
+            color: #b89f3f;
+        }
+
+        /* INSTRUÇÃO */
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            text-align: center;
+            color: #d4af37;
+            font-size: clamp(12px, 1.5vw, 16px);
+            font-weight: 300;
+            letter-spacing: 1px;
+            animation: fadeIn 1s ease 0.4s both;
+            z-index: 25;
+        }
+
+        .instruction .pulse-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: #d4af37;
+            border-radius: 50%;
+            margin: 0 4px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* TELA DO CONVITE */
+        .invitation-screen {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+            z-index: 21;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
+            padding: 20px;
+        }
+
+        .invitation-screen.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .invitation-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid #d4af37;
+            border-radius: 20px;
+            padding: clamp(30px, 5vw, 50px);
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 
+                0 30px 80px rgba(212, 175, 55, 0.2),
+                inset 0 0 30px rgba(212, 175, 55, 0.05);
+            animation: cardEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes cardEntrance {
+            from {
+                opacity: 0;
+                transform: scale(0.8) rotateY(-30deg);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) rotateY(0);
+            }
+        }
+
+        .invitation-card::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 30%, rgba(212, 175, 55, 0.05) 50%, transparent 70%);
+            animation: shimmer 4s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translate(-100%, -100%) rotate(45deg); }
+            100% { transform: translate(100%, 100%) rotate(45deg); }
+        }
+
+        /* CONTEÚDO DO CONVITE */
+        .card-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            color: white;
+        }
+
+        .card-content h1 {
+            font-size: clamp(20px, 4vw, 36px);
+            color: #d4af37;
+            margin-bottom: 15px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            animation: slideDown 0.6s ease 0.1s both;
+        }
+
+        .card-content .subtitle {
+            font-size: clamp(14px, 2vw, 24px);
+            color: #d4af37;
+            margin-bottom: 30px;
+            font-weight: 400;
+            font-style: italic;
+            animation: slideDown 0.6s ease 0.2s both;
+        }
+
+        .celebration-icons {
+            font-size: clamp(32px, 6vw, 48px);
+            display: flex;
+            justify-content: center;
+            gap: clamp(15px, 3vw, 30px);
+            margin-bottom: 30px;
+            animation: slideDown 0.6s ease 0.3s both;
+        }
+
+        .celebration-icons span {
+            display: inline-block;
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+
+        .celebration-icons span:nth-child(1) { animation-delay: 0s; }
+        .celebration-icons span:nth-child(2) { animation-delay: 0.3s; }
+        .celebration-icons span:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        .divider {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #d4af37, transparent);
+            margin: 25px auto;
+            animation: slideDown 0.6s ease 0.4s both;
+        }
+
+        .details-section {
+            margin: 35px 0;
+            animation: slideDown 0.6s ease 0.5s both;
+        }
+
+        .age-display {
+            font-size: clamp(24px, 4vw, 32px);
+            color: #d4af37;
+            margin-bottom: 25px;
+            font-weight: 400;
+        }
+
+        .countdown {
+            background: rgba(212, 175, 55, 0.1);
+            border: 2px solid #d4af37;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            animation: slideDown 0.6s ease 0.45s both;
+        }
+
+        .countdown h3 {
+            color: #d4af37;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .countdown-items {
+            display: flex;
+            justify-content: space-around;
+            gap: 10px;
+        }
+
+        .countdown-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .countdown-value {
+            font-size: clamp(18px, 3vw, 24px);
+            color: #d4af37;
+            font-weight: 600;
+        }
+
+        .countdown-label {
+            font-size: 11px;
+            color: #b89f3f;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .detail-item {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(212, 175, 55, 0.05);
+            border-left: 3px solid #d4af37;
+            border-radius: 4px;
+            text-align: left;
+            transition: all 0.3s ease;
+            animation: slideDown 0.6s ease calc(0.5s + var(--index) * 0.05s) both;
+        }
+
+        .detail-item:hover {
+            background: rgba(212, 175, 55, 0.1);
+            transform: translateX(5px);
+        }
+
+        .detail-icon {
+            color: #d4af37;
+            font-size: 20px;
+            margin-right: 12px;
+            min-width: 30px;
+        }
+
+        .detail-item p {
+            font-size: clamp(13px, 1.5vw, 16px);
+            margin: 4px 0;
+        }
+
+        .detail-item strong {
+            color: #d4af37;
+        }
+
+        .buttons-section {
+            display: flex;
+            gap: 15px;
+            margin-top: 35px;
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: slideDown 0.6s ease 0.6s both;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 14px 25px;
+            border: 2px solid #d4af37;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #d4af37, #f0d555);
+            color: #1a1a2e;
+            text-decoration: none;
+        }
+
+        .btn-confirm:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn-confirm:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-directions {
+            background: transparent;
+            color: #d4af37;
+            text-decoration: none;
+        }
+
+        .btn-directions:hover {
+            background: rgba(212, 175, 55, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(212, 175, 55, 0.2);
+        }
+
+        .btn-directions:active {
+            transform: translateY(-1px);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(212, 175, 55, 0.1);
+            border: none;
+            color: #d4af37;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 3;
+        }
+
+        .close-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+            transform: rotate(90deg);
+        }
+
+        /* TELA DE CONFIRMAÇÃO */
+        .confirmation-screen {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+            z-index: 22;
+            text-align: center;
+        }
+
+        .confirmation-screen.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .confirmation-content {
+            animation: confetti-pop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes confetti-pop {
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .confirmation-content h2 {
+            font-size: clamp(32px, 6vw, 56px);
+            color: #d4af37;
+            margin-bottom: 20px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .confirmation-content p {
+            font-size: clamp(16px, 2vw, 24px);
+            color: white;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        .back-btn {
+            margin-top: 30px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #d4af37, #f0d555);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(212, 175, 55, 0.4);
+        }
+
+        /* CONFETE */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #d4af37;
+            z-index: 23;
+            pointer-events: none;
+        }
+
+        /* RESPONSIVO */
+        @media (max-width: 768px) {
+            .envelope-title h1 {
+                margin-bottom: 15px;
+            }
+
+            .buttons-section {
+                flex-direction: column;
+            }
+
+            .btn {
+                min-width: 100%;
+            }
+
+            .celebration-icons {
+                gap: 12px;
+            }
+
+            .invitation-card {
+                border-radius: 16px;
+            }
+
+            .countdown-items {
+                gap: 5px;
+            }
+        }
+
+        /* ANIMAÇÕES */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
+        /* OTIMIZAÇÃO PERFORMANCE */
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .particle {
+            will-change: transform;
+        }
+
+        /* Nome personalizado */
+        .guest-name {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid #d4af37;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: #d4af37;
+            font-size: 12px;
+            letter-spacing: 1px;
+            z-index: 25;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        /* Música */
+        audio {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- ÁUDIO AMBIENTAL -->
+    <audio id="ambientMusic" loop volume="0.3"></audio>
+    <audio id="envelopeOpenSound"></audio>
+    <audio id="confirmSound"></audio>
+
+    <!-- PARTÍCULAS DOURADAS -->
+    <div class="particles-container" id="particlesContainer"></div>
+
+    <!-- CANVAS 3D -->
+    <canvas id="canvas3d"></canvas>
+
+    <!-- CONTAINER PRINCIPAL -->
+    <div class="main-container">
+        <!-- NOME DO CONVIDADO -->
+        <div class="guest-name" id="guestName" style="display:none;">
+            Bem-vindo(a), <span id="guestNameText"></span>
+        </div>
+
+        <!-- TELA ENVELOPE -->
+        <div class="envelope-screen" id="envelopeScreen">
+            <div class="envelope-title">
+                <h1>Você recebeu um</h1>
+                <p>Convite Especial</p>
+            </div>
+
+            <div class="instruction">
+                <span>Toque no envelope para abrir</span>
+                <span class="pulse-dot"></span>
+            </div>
+        </div>
+
+        <!-- TELA DO CONVITE -->
+        <div class="invitation-screen" id="invitationScreen">
+            <div class="invitation-card">
+                <button class="close-btn" onclick="closeInvitation()">✕</button>
+                <div class="card-content">
+                    <h1>Você foi convidado!</h1>
+                    <p class="subtitle">Celebrar este momento inesquecível!</p>
+                    
+                    <div class="celebration-icons">
+                        <span>🎉</span>
+                        <span>🎂</span>
+                        <span>🎈</span>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="details-section">
+                        <div class="age-display">Mi 50 Anos</div>
+                        
+                        <!-- CONTAGEM REGRESSIVA -->
+                        <div class="countdown">
+                            <h3>Faltam:</h3>
+                            <div class="countdown-items">
+                                <div class="countdown-item">
+                                    <div class="countdown-value" id="days">0</div>
+                                    <div class="countdown-label">Dias</div>
+                                </div>
+                                <div class="countdown-item">
+                                    <div class="countdown-value" id="hours">0</div>
+                                    <div class="countdown-label">Horas</div>
+                                </div>
+                                <div class="countdown-item">
+                                    <div class="countdown-value" id="minutes">0</div>
+                                    <div class="countdown-label">Minutos</div>
+                                </div>
+                                <div class="countdown-item">
+                                    <div class="countdown-value" id="seconds">0</div>
+                                    <div class="countdown-label">Segundos</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-item" style="--index: 0">
+                            <span class="detail-icon">📅</span>
+                            <p><strong>Data:</strong> 12 de Julho de 2025</p>
+                        </div>
+
+                        <div class="detail-item" style="--index: 1">
+                            <span class="detail-icon">🕐</span>
+                            <p><strong>Horário:</strong> 19h30</p>
+                        </div>
+
+                        <div class="detail-item" style="--index: 2">
+                            <span class="detail-icon">📍</span>
+                            <p><strong>Local:</strong> Rua Paraguai, 31 - Vila São José</p>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="buttons-section">
+                        <button class="btn btn-confirm" onclick="confirmPresence()">
+                            <i class="fab fa-whatsapp"></i> Confirmar Presença
+                        </button>
+                        <a href="https://maps.google.com/?q=Rua+Paraguai,+31+-+Vila+São+José" target="_blank" class="btn btn-directions">
+                            <i class="fas fa-map-marker-alt"></i> Como Chegar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA DE CONFIRMAÇÃO -->
+        <div class="confirmation-screen" id="confirmationScreen">
+            <div class="confirmation-content">
+                <h2>Obrigado! 🎊</h2>
+                <p>Sua presença foi confirmada!</p>
+                <p style="margin-top: 25px; font-size: clamp(14px, 1.8vw, 18px); color: #d4af37;">Não vemos a hora de celebrar com você!</p>
+                <button class="back-btn" onclick="backToEnvelope()">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== SCENE SETUP ==========
+        const canvas = document.getElementById('canvas3d');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        camera.position.z = 5;
+
+        // Background
+        scene.background = null;
+
+        // ========== LIGHTS ==========
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0xd4af37, 1.5, 100);
+        pointLight1.position.set(10, 10, 10);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xffed4e, 0.8, 100);
+        pointLight2.position.set(-10, -10, 5);
+        scene.add(pointLight2);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        directionalLight.position.set(5, 5, 5);
+        scene.add(directionalLight);
+
+        // ========== ENVELOPE 3D ==========
+        const envelopeGroup = new THREE.Group();
+        scene.add(envelopeGroup);
+
+        // Corpo do envelope (caixa preta)
+        const envelopeGeometry = new THREE.BoxGeometry(3, 2, 0.3);
+        const envelopeMaterial = new THREE.MeshStandardMaterial({
+            color: 0x1a1a2e,
+            metalness: 0.4,
+            roughness: 0.6,
+            emissive: 0x2a2a4e,
+            emissiveIntensity: 0.2
+        });
+        const envelopeBody = new THREE.Mesh(envelopeGeometry, envelopeMaterial);
+        envelopeGroup.add(envelopeBody);
+
+        // Borda dourada do envelope
+        const borderGeometry = new THREE.EdgesGeometry(envelopeGeometry);
+        const borderMaterial = new THREE.LineBasicMaterial({ color: 0xd4af37, linewidth: 2 });
+        const borderMesh = new THREE.LineSegments(borderGeometry, borderMaterial);
+        envelopeGroup.add(borderMesh);
+
+        // Lacre dourado (esfera com textura)
+        const sealGeometry = new THREE.IcosahedronGeometry(0.4, 8);
+        const sealMaterial = new THREE.MeshStandardMaterial({
+            color: 0xd4af37,
+            metalness: 0.8,
+            roughness: 0.2,
+            emissive: 0xf0d555,
+            emissiveIntensity: 0.3
+        });
+        const seal = new THREE.Mesh(sealGeometry, sealMaterial);
+        seal.position.set(0, 0, 0.3);
+        envelopeGroup.add(seal);
+
+        // Anel ao redor do lacre
+        const ringGeometry = new THREE.TorusGeometry(0.5, 0.05, 16, 100);
+        const ringMaterial = new THREE.MeshStandardMaterial({
+            color: 0xf0d555,
+            metalness: 0.9,
+            roughness: 0.1,
+            emissive: 0xffd700,
+            emissiveIntensity: 0.2
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.position.z = 0.3;
+        envelopeGroup.add(ring);
+
+        // ========== PARTÍCULAS 3D ==========
+        const particlesGroup = new THREE.Group();
+        scene.add(particlesGroup);
+
+        function createParticles3D() {
+            const particleCount = 100;
+            const positions = new Float32Array(particleCount * 3);
+            
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 20;
+                positions[i + 1] = (Math.random() - 0.5) * 20;
+                positions[i + 2] = (Math.random() - 0.5) * 20;
+            }
+
+            const particleGeometry = new THREE.BufferGeometry();
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const particleMaterial = new THREE.PointsMaterial({
+                color: 0xd4af37,
+                size: 0.05,
+                sizeAttenuation: true,
+                transparent: true,
+                opacity: 0.6
+            });
+
+            const particles = new THREE.Points(particleGeometry, particleMaterial);
+            particlesGroup.add(particles);
+
+            return particles;
+        }
+
+        const particles = createParticles3D();
+
+        // ========== ANIMAÇÕES ==========
+        let isEnvelopeOpen = false;
+        let animationRunning = false;
+
+        function animateEnvelopeOpening() {
+            if (animationRunning || isEnvelopeOpen) return;
+            animationRunning = true;
+            isEnvelopeOpen = true;
+
+            playSound('envelope-open');
+
+            // Animação do envelope
+            gsap.to(envelopeBody.rotation, {
+                x: Math.PI,
+                duration: 1.5,
+                ease: "power2.inOut"
+            });
+
+            gsap.to(envelopeGroup.position, {
+                y: -3,
+                duration: 1.5,
+                ease: "power2.inOut"
+            });
+
+            // Animação do lacre
+            gsap.to(seal.rotation, {
+                x: Math.random() * Math.PI,
+                y: Math.random() * Math.PI,
+                z: Math.random() * Math.PI,
+                duration: 1.5,
+                ease: "power2.inOut"
+            });
+
+            gsap.to(seal.scale, {
+                x: 1.2,
+                y: 1.2,
+                z: 1.2,
+                duration: 1.5,
+                ease: "back.out"
+            });
+
+            // Animação das partículas
+            gsap.to(particlesGroup.rotation, {
+                x: Math.random() * Math.PI * 2,
+                y: Math.random() * Math.PI * 2,
+                duration: 2,
+                ease: "power1.inOut"
+            });
+
+            gsap.to(particlesGroup.position, {
+                y: 2,
+                duration: 1.5,
+                ease: "power2.inOut"
+            });
+
+            setTimeout(() => {
+                document.getElementById('envelopeScreen').classList.add('hidden');
+                document.getElementById('invitationScreen').classList.add('show');
+                animationRunning = false;
+                createConfetti();
+            }, 1500);
+        }
+
+        // ========== INTERAÇÃO ==========
+        canvas.addEventListener('click', () => {
+            if (!isEnvelopeOpen) {
+                animateEnvelopeOpening();
+            }
+        });
+
+        // Touch para mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!isEnvelopeOpen) {
+                animateEnvelopeOpening();
+            }
+        });
+
+        // ========== ANIMAÇÃO CONTÍNUA ==========
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotação suave do envelope
+            if (!isEnvelopeOpen && !animationRunning) {
+                envelopeGroup.rotation.y += 0.005;
+                envelopeGroup.rotation.z += 0.002;
+            }
+
+            // Rotação das partículas
+            particles.rotation.x += 0.0001;
+            particles.rotation.y += 0.0002;
+
+            // Pulsação do lacre
+            seal.scale.x = 1 + Math.sin(Date.now() * 0.003) * 0.05;
+            seal.scale.y = 1 + Math.sin(Date.now() * 0.003) * 0.05;
+            seal.scale.z = 1 + Math.sin(Date.now() * 0.003) * 0.05;
+
+            // Pulsação das luzes
+            pointLight1.intensity = 1.5 + Math.sin(Date.now() * 0.002) * 0.5;
+            pointLight2.intensity = 0.8 + Math.cos(Date.now() * 0.002) * 0.3;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // ========== RESIZE ==========
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ========== SONS ==========
+        function playSound(type) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            if (type === 'envelope-open') {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.frequency.setValueAtTime(600, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1000, audioContext.currentTime + 0.3);
+                
+                gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 0.3);
+            } else if (type === 'confirm') {
+                const osc1 = audioContext.createOscillator();
+                const osc2 = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc1.frequency.setValueAtTime(800, audioContext.currentTime);
+                osc2.frequency.setValueAtTime(1200, audioContext.currentTime);
+                
+                gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                osc1.start(audioContext.currentTime);
+                osc2.start(audioContext.currentTime);
+                osc1.stop(audioContext.currentTime + 0.3);
+                osc2.stop(audioContext.currentTime + 0.3);
+            }
+        }
+
+        // ========== CONFETE ==========
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-10px';
+                confetti.style.background = Math.random() > 0.5 ? '#d4af37' : '#f0d555';
+                document.body.appendChild(confetti);
+
+                gsap.to(confetti, {
+                    top: window.innerHeight + 10,
+                    left: `+=${(Math.random() - 0.5) * 200}`,
+                    rotation: Math.random() * 720,
+                    opacity: 0,
+                    duration: Math.random() * 2 + 2,
+                    ease: "power2.in",
+                    onComplete: () => confetti.remove()
+                });
+            }
+        }
+
+        // ========== PARTÍCULAS 2D ==========
+        function createParticles() {
+            const container = document.getElementById('particlesContainer');
+            const particleCount = window.innerWidth > 768 ? 50 : 30;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 4 + 2;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                
+                const duration = Math.random() * 20 + 20;
+                const delay = Math.random() * 2;
+                
+                particle.style.animation = `floatParticle ${duration}s linear ${delay}s infinite`;
+                
+                container.appendChild(particle);
+            }
+
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes floatParticle {
+                    0% {
+                        transform: translateY(0px) translateX(0px) rotate(0deg);
+                        opacity: 0.6;
+                    }
+                    50% {
+                        opacity: 0.3;
+                    }
+                    100% {
+                        transform: translateY(-100vh) translateX(100px) rotate(360deg);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // ========== CONTAGEM REGRESSIVA ==========
+        function updateCountdown() {
+            const eventDate = new Date('2025-07-12T19:30:00').getTime();
+            
+            setInterval(() => {
+                const now = new Date().getTime();
+                const distance = eventDate - now;
+
+                if (distance < 0) {
+                    document.getElementById('days').textContent = '0';
+                    document.getElementById('hours').textContent = '0';
+                    document.getElementById('minutes').textContent = '0';
+                    document.getElementById('seconds').textContent = '0';
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                document.getElementById('days').textContent = String(days).padStart(2, '0');
+                document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+                document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+                document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+            }, 1000);
+        }
+
+        // ========== FUNÇÕES DE INTERFACE ==========
+        function closeInvitation() {
+            document.getElementById('invitationScreen').classList.remove('show');
+            document.getElementById('envelopeScreen').classList.remove('hidden');
+            isEnvelopeOpen = false;
+
+            gsap.to(envelopeGroup, {
+                rotationX: 0,
+                rotationY: 0,
+                rotationZ: 0,
+                y: 0,
+                duration: 1,
+                ease: "power2.inOut"
+            });
+
+            gsap.to(seal.scale, {
+                x: 1,
+                y: 1,
+                z: 1,
+                duration: 0.8,
+                ease: "back.inOut"
+            });
+        }
+
+        function confirmPresence() {
+            playSound('confirm');
+            document.getElementById('invitationScreen').classList.remove('show');
+            
+            setTimeout(() => {
+                document.getElementById('confirmationScreen').classList.add('show');
+                createConfetti();
+            }, 300);
+            
+            setTimeout(() => {
+                const message = "Confirmo minha presença na festa de aniversário de 50 anos! 🎉🎂";
+                const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+            }, 500);
+        }
+
+        function backToEnvelope() {
+            document.getElementById('confirmationScreen').classList.remove('show');
+            document.getElementById('envelopeScreen').classList.remove('hidden');
+            isEnvelopeOpen = false;
+
+            gsap.to(envelopeGroup, {
+                rotationX: 0,
+                rotationY: 0,
+                rotationZ: 0,
+                y: 0,
+                duration: 1,
+                ease: "power2.inOut"
+            });
+        }
+
+        // ========== INICIALIZAÇÃO ==========
+        window.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            updateCountdown();
+        });
+
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('particlesContainer');
+            container.innerHTML = '';
+            createParticles();
+        });
+
+        // Detectar nome do convidado via URL
+        const params = new URLSearchParams(window.location.search);
+        const guestName = params.get('name');
+        if (guestName) {
+            document.getElementById('guestName').style.display = 'block';
+            document.getElementById('guestNameText').textContent = guestName;
+        }
+    </script>
+</body>
+</html>
